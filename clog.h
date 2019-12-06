@@ -231,6 +231,23 @@ int clog_set_date_fmt(int id, const char *fmt);
  */
 int clog_set_fmt(int id, const char *fmt);
 
+/**
+ * Set rotate policy, rotates in the same path directory
+ * Rotate is off by default
+ * When rotate is set, the log file name will be appended with a numeric suffix, 
+ * and there will be an unsuffixed file symbolically linked to the current log
+ *
+ * @param count
+ * The files be rotated count
+ *
+ * @param size
+ * The single file size limit
+ *
+ * @return
+ * Zero on success, non-zero on failure.
+ */
+int clog_set_rotate(int id, int count, int size);
+
 /*
  * No need to read below this point.
  */
