@@ -72,6 +72,7 @@
 #include <string.h>
 #include <time.h>
 #include <unistd.h>
+#include <sys/syslimits.h>
 
 /* Number of loggers that can be defined. */
 #define CLOG_MAX_LOGGERS 16
@@ -247,6 +248,9 @@ int clog_set_fmt(int id, const char *fmt);
  * Zero on success, non-zero on failure.
  */
 int clog_set_rotate(int id, int count, int size);
+int _rotate_turnon(struct clog *logger, int count, int size);
+int _rotate_turnoff(struct clog *logger);
+int _rotate_adjust(struct clog *logger, int count, int size);
 
 /*
  * No need to read below this point.
@@ -286,6 +290,10 @@ struct clog {
 
     /* Tracks whether the fd needs to be closed eventually. */
     int opened;
+
+    /* rotate param, anyone is 0 means rotate be closed */
+    int rotate_count;
+    int rotate_size;
 };
 
 void _clog_err(const char *fmt, ...);
@@ -343,6 +351,8 @@ clog_init_fd(int id, int fd)
     strcpy(logger->fmt, CLOG_DEFAULT_FORMAT);
     strcpy(logger->date_fmt, CLOG_DEFAULT_DATE_FORMAT);
     strcpy(logger->time_fmt, CLOG_DEFAULT_TIME_FORMAT);
+    logger->rotate_size = 0;
+    logger->rotate_count = 0;
 
     _clog_loggers[id] = logger;
     return 0;
@@ -417,6 +427,57 @@ clog_set_fmt(int id, const char *fmt)
         return 1;
     }
     strcpy(logger->fmt, fmt);
+    return 0;
+}
+
+int 
+clog_set_rotate(int id, int count, int size)
+{
+    int ret;
+    int curr, turnon;
+    struct clog *logger = _clog_loggers[id];
+    if (logger == NULL) {
+        _clog_err("clog_set_fmt: No such logger: %d\n", id);
+        return 1;
+    }
+
+    curr = logger->rotate_count && logger->rotate_size;
+    turnon = count && size;
+
+    if (!curr && !turnon) {
+        ret = 0;
+    } else if ( !curr && turnon ) {
+        ret = _rotate_turnon(logger, count, size);
+        // turnon
+    } else if ( curr && !turnon ) {
+        // turnoff
+        ret = _rotate_turnoff(logger);
+    } else {
+        // adjust
+        ret = _rotate_adjust(logger, count, size);
+    }
+
+    // set new rotate parameter
+    logger->rotate_count = count;
+    logger->rotate_size = size;
+    return ret;
+}
+
+int
+_rotate_turnon(struct clog *logger, int count, int size) {
+    // logger->fd
+    char file_path[PATH_MAX];
+    fcntl(logger->fd, F_GETPATH, file_path)
+    return 0;
+}
+
+int
+_rotate_turnoff(struct clog *logger) {
+    return 0;
+}
+
+int
+_rotate_adjust(struct clog *logger, int count, int size) {
     return 0;
 }
 
